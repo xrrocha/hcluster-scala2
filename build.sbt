@@ -2,7 +2,7 @@ name := "playground"
 
 version := "0.1"
 
-scalaVersion := "2.11.0"
+scalaVersion := "2.11.5"
 
 scalacOptions ++= Seq("-deprecation")
 

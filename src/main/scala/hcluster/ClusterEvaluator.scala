@@ -6,11 +6,14 @@ trait ClusterEvaluator {
   def evaluate(clusterPartition: Seq[Cluster], similarityMatrix: SimilarityMatrix): Score
   def isScoreBetter(s1: Score, s2: Score): Boolean
 
-  def selectBestScore(scores: Seq[Score]) =
-    scores.tail.foldLeft(scores.head) { (bestSoFar, currentScore) =>
-      if (isScoreBetter(bestSoFar, currentScore)) bestSoFar
-      else currentScore
-    }
+  def selectBestScore(scores: Seq[Score]): Score = scores match {
+    case Nil => 0d
+    case _ =>
+      scores.tail.foldLeft(scores.head) { (bestSoFar, currentScore) =>
+        if (isScoreBetter(bestSoFar, currentScore)) bestSoFar
+        else currentScore
+      }
+  }
 }
 trait MinimizingClusterEvaluator extends ClusterEvaluator {
   def isScoreBetter(s1: Score, s2: Score): Boolean = s1 < s2

@@ -5,6 +5,8 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.Logging
 
+import scala.collection.immutable
+
 trait Dendrogram {
   def clusters: IndexedSeq[Cluster] = collectClusters(Vector())
   def collectClusters(accum: IndexedSeq[Cluster]): IndexedSeq[Cluster]
@@ -29,37 +31,37 @@ object Dendrogram extends Logging {
   val logger = Logger(LoggerFactory getLogger "Dendrogram")
 
   def apply(size: Int, similarityMatrix: SimilarityMatrix): Dendrogram = {
-    val seedPairs = for (i <- 0 until size) yield (i, Leaf(Cluster(i)))
-    val seedMap = Map[Int, Dendrogram](seedPairs: _*)
-    val (index, dendrograms) = agglomerate(size, seedMap, similarityMatrix)
+    val seedPairs: IndexedSeq[(Index, Leaf)] = for (i <- 0 until size) yield (i, Leaf(Cluster(i)))
+    val seedMap: Map[Index, Dendrogram] = Map[Int, Dendrogram](seedPairs: _*)
+    val (index: Index, dendrograms: Map[Index, Dendrogram]) = agglomerate(size, seedMap, similarityMatrix)
     dendrograms(index - 1)
   }
 
   // TODO Add unit test to Dendrogram.apply(IndexedSeq[Cluster, SimilarityMatrix)
   def apply(clusters: Seq[Cluster], similarityMatrix: SimilarityMatrix): Dendrogram = {
-    val seedPairs = for (i <- 0 until clusters.length) yield (i, Leaf(clusters(i)))
-    val seedMap = Map[Int, Dendrogram](seedPairs: _*)
-    val (index, dendrograms) = agglomerate(clusters.length, seedMap, similarityMatrix)
+    val seedPairs: IndexedSeq[(Index, Leaf)] = for (i <- 0 until clusters.length) yield (i, Leaf(clusters(i)))
+    val seedMap: Map[Index, Dendrogram] = Map[Int, Dendrogram](seedPairs: _*)
+    val (index: Index, dendrograms: Map[Index, Dendrogram]) = agglomerate(clusters.length, seedMap, similarityMatrix)
     dendrograms(index - 1)
   }
 
   private def agglomerate(mapIndex: Int, dendrograms: Map[Int, Dendrogram], similarityMatrix: SimilarityMatrix): (Index, Map[Int, Dendrogram]) =
     if (dendrograms.size == 1) (mapIndex, dendrograms)
     else {
-      val (newmapIndex, newDendrograms) = merge(mapIndex, dendrograms, similarityMatrix)
+      val (newmapIndex: Index, newDendrograms: Map[Index, Dendrogram]) = merge(mapIndex, dendrograms, similarityMatrix)
       agglomerate(newmapIndex, newDendrograms, similarityMatrix)
     }
 
   private def merge(mapIndex: Int, dendrograms: Map[Int, Dendrogram], similarityMatrix: SimilarityMatrix): (Index, Map[Int, Dendrogram]) = {
-    val dendrogramVector = dendrograms.toVector
+    val dendrogramVector: Vector[(Index, Dendrogram)] = dendrograms.toVector
 
-    val pairs = for {
+    val pairs: IndexedSeq[(Index, Index)] = for {
       i <- 0 until dendrogramVector.length
       j <- i + 1 until dendrogramVector.length
     } yield (i, j)
 
     def dendrogramSimilarity(leftDendrogram: Dendrogram, rightDendrogram: Dendrogram): Similarity = {
-      val similarities = for {
+      val similarities: IndexedSeq[Similarity] = for {
         leftCluster <- leftDendrogram.clusters
         leftCentroid = leftCluster.centroid
         rightCluster <- rightDendrogram.clusters
@@ -71,16 +73,17 @@ object Dendrogram extends Logging {
     }
 
     def similarityTriplet(pair: (Index, Index)): (Index, Index, Similarity) = {
-      val (i, j) = pair
-      val (leftIndex, leftDendrogram) = dendrogramVector(i)
-      val (rightIndex, rightDendrogram) = dendrogramVector(j)
+      val (i: Index, j: Index) = pair
+      val (leftIndex: Index, leftDendrogram: Dendrogram) = dendrogramVector(i)
+      val (rightIndex: Index, rightDendrogram: Dendrogram) = dendrogramVector(j)
       (leftIndex, rightIndex, dendrogramSimilarity(leftDendrogram, rightDendrogram))
     }
-    val similarityTriplets = (pairs map similarityTriplet) sortBy(-_._3) // 0 <= s <= 1
+    val similarityTriplets: IndexedSeq[(Index, Index, Similarity)] =
+      (pairs map similarityTriplet) sortBy(-_._3) // 0 <= s <= 1
 
     def doMerge(indexMapPair: (Int, Map[Int, Dendrogram]), triplet: (Index, Index, Similarity)) = {
-      val (i, j, similarity) = triplet
-      val (currentMapIndex, dendrograms) = indexMapPair
+      val (i: Index, j: Index, similarity: Similarity) = triplet
+      val (currentMapIndex: Index, dendrograms: Map[Index, Dendrogram]) = indexMapPair
 
       if (!((dendrograms contains i) && (dendrograms contains j)))
         indexMapPair
@@ -108,7 +111,7 @@ object Dendrogram extends Logging {
       }
     }
 
-    val nodePairs = collectNodes(Seq(), Seq(0), dendrogram)
+    val nodePairs: Seq[(String, String)] = collectNodes(Seq(), Seq(0), dendrogram)
 
     def collectEdges(accum: Seq[(String, String)], path: Seq[Int], dendrogram: Dendrogram): Seq[(String, String)] = {
       val nodeName = s"n_${path mkString "_"}"
@@ -120,7 +123,7 @@ object Dendrogram extends Logging {
       }
     }
 
-    val edgePairs = collectEdges(Seq(), Seq(0), dendrogram)
+    val edgePairs: Seq[(String, String)] = collectEdges(Seq(), Seq(0), dendrogram)
 
     val dot =
       s"""

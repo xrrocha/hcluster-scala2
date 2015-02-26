@@ -39,7 +39,7 @@ class ClustererTest extends FunSuite with Logging {
 
 object ClustererTest extends App {
   val start = .8
-  val end = .9
+  val end = .95
   val step = 0.5
   val metrics = for (threshold <- start to end by step) yield {
     val clusterer = new Clusterer[String]
@@ -51,7 +51,7 @@ object ClustererTest extends App {
       override val lowThreshold: Similarity = threshold
     }
 
-    val names = io.Source.fromFile("data/spanish-surnames.tsv").getLines.take(50).toVector
+    val names = io.Source.fromFile("data/spanish-surnames.tsv").getLines.take(500).toVector
 
     val (pair, elapsedTime) = time(clusterer.cluster(names))
     val (score, clusters) = pair
