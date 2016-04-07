@@ -11,7 +11,7 @@ trait Clusterer[A] { this: PairGenerator with SimilarityMetric[A] with ClusterEv
     def doCompare(i: Index, j: Index) = compare(values(i), values(j))
 
     val similarityMatrix: SimilarityMatrix = SimilarityMatrix(doCompare, pairs, lowThreshold)
-    val seedClusters: immutable.IndexedSeq[Cluster] = (0 until values.length).map(Cluster(_))
+    val seedClusters: immutable.IndexedSeq[Cluster] = values.indices.map(Cluster(_))
     val (evaluation: Score, clusters: Seq[Cluster]) =
       agglomerate(seedClusters, (evaluate(seedClusters, similarityMatrix), seedClusters), similarityMatrix)
 

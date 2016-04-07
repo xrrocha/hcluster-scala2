@@ -27,7 +27,7 @@ object Cluster {
 
     val similarityPairs: Seq[(Index, Similarity)] =
       (similarityTriplets ++ similarityTriplets map (t => (t._2, t._1, t._3))).
-        groupBy{case (left: Index, right: Index) => left}.
+        groupBy{case (left: Index, right: Index, similarity: Similarity) => left}.
         map { case(i: Index, t: IndexedSeq[(Index, Index, Similarity)]) => (i, t.map(_._3).sum / t.length) }.
         toSeq
 
