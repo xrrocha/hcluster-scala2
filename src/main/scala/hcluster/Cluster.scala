@@ -38,9 +38,13 @@ object Cluster {
         }.
         toSeq
 
-    val orderedPairs: Seq[(Index, Similarity)] = similarityPairs.sortBy(-_._2)
+    if (similarityPairs.isEmpty) (elements.head, 0d)
+    else {
+      val maxSimilarity = similarityPairs.map(_._2).max
+      val centroid = similarityPairs.find(_._2 == maxSimilarity).get._1
 
-    orderedPairs.headOption.getOrElse(elements.head, 0d)
+      (centroid, maxSimilarity)
+    }
   }
 
   def similarity(c1: Cluster, c2: Cluster, similarityMatrix: SimilarityMatrix): Similarity = {
