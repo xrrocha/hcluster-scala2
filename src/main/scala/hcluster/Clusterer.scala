@@ -7,6 +7,7 @@ import scala.collection.immutable
 // TODO Support minSimilarity = 0d
 trait Clusterer[A] {
   this: PairGenerator with SimilarityMetric[A] with ClusterEvaluator =>
+
   def cluster(values: IndexedSeq[A]): (Score, Seq[Seq[A]]) = {
     val pairs: IndexedSeq[(Index, Index)] = pairsFrom(values)
 
@@ -17,7 +18,7 @@ trait Clusterer[A] {
     val (evaluation: Score, clusters: Seq[Cluster]) =
       agglomerate(seedClusters, (evaluate(seedClusters, similarityMatrix), seedClusters), similarityMatrix)
 
-    (evaluation, clusters.map(_.elements map values))
+    (evaluation, clusters.map(_.elements.map(values)))
   }
 
   private def agglomerate(clusters: Seq[Cluster],
@@ -44,13 +45,13 @@ trait Clusterer[A] {
   private def cluster(clusters: Seq[Cluster], similarityMatrix: SimilarityMatrix): (Score, Seq[Cluster]) = {
     val dendrogram: Dendrogram = Dendrogram(clusters, similarityMatrix)
 
-    val thresholds: Seq[Similarity] = Dendrogram.thresholds(dendrogram) filter (_ > lowThreshold)
+    val thresholds: Seq[Similarity] = Dendrogram.thresholds(dendrogram).filter(_ > lowThreshold)
 
     if (thresholds.isEmpty) (evaluate(clusters, similarityMatrix), clusters)
     else {
-      val evaluations: Seq[(Score, IndexedSeq[Cluster])] = thresholds map { threshold =>
+      val evaluations: Seq[(Score, IndexedSeq[Cluster])] = thresholds.map { threshold =>
         val cuts: IndexedSeq[Dendrogram] = dendrogram cutAt threshold
-        val clusters: IndexedSeq[Cluster] = cuts map (Cluster(_, similarityMatrix))
+        val clusters: IndexedSeq[Cluster] = cuts.map(Cluster(_, similarityMatrix))
         (evaluate(clusters, similarityMatrix), clusters)
       }
 
