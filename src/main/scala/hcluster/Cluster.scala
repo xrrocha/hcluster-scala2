@@ -15,24 +15,32 @@ object Cluster {
 
   def apply(dendrogram: Dendrogram, similarityMatrix: SimilarityMatrix): Cluster = {
     val elements: IndexedSeq[Index] = dendrogram.clusters flatMap (_.elements)
-    val (centroid: Index, intraSimilarity: Similarity) = centroidPair(elements, similarityMatrix)
-    new Cluster(centroid, intraSimilarity, elements)
+    val (centroidIndex: Index, centroidIntraSimilarity: Similarity) = findCentroid(elements, similarityMatrix)
+    new Cluster(centroidIndex, centroidIntraSimilarity, elements)
   }
 
-  def centroidPair(elements: Seq[Int], similarityMatrix: SimilarityMatrix): (Index, Similarity) = {
-    val similarityTriplets: IndexedSeq[(Index, Index, Similarity)] =
+  def findCentroid(elements: Seq[Int], similarityMatrix: SimilarityMatrix): (Index, Similarity) = {
+
+    val leftSimilarityTriplets: IndexedSeq[(Index, Index, Similarity)] =
       for (i <- elements.indices; j <- i + 1 until elements.length)
         yield (elements(i), elements(j), similarityMatrix(elements(i), elements(j)))
 
+    val rightSimilarityTriplets: IndexedSeq[(Index, Index, Similarity)] =
+      leftSimilarityTriplets.map { case (leftElement, rightElement, similarity) =>
+        (rightElement, leftElement, similarity)
+      }
+
     val similarityPairs: Seq[(Index, Similarity)] =
-      (similarityTriplets ++ similarityTriplets map (t => (t._2, t._1, t._3))).
+      (leftSimilarityTriplets ++ rightSimilarityTriplets).
         groupBy { case (left: Index, _, _) => left }.
-        map { case (i: Index, t: IndexedSeq[(Index, Index, Similarity)]) => (i, t.map(_._3).sum / t.length) }.
+        map { case (element: Index, triplets: IndexedSeq[(Index, Index, Similarity)]) =>
+          (element, triplets.map(_._3).sum / triplets.length)
+        }.
         toSeq
 
-    val orderedPairs: Seq[(Index, Similarity)] = similarityPairs sortBy (-_._2)
+    val orderedPairs: Seq[(Index, Similarity)] = similarityPairs.sortBy(-_._2)
 
-    orderedPairs.headOption getOrElse(elements.head, 0d)
+    orderedPairs.headOption.getOrElse(elements.head, 0d)
   }
 
   def similarity(c1: Cluster, c2: Cluster, similarityMatrix: SimilarityMatrix): Similarity = {

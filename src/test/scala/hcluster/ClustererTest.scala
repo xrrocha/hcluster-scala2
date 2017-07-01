@@ -2,7 +2,7 @@ package hcluster
 
 import com.typesafe.scalalogging.LazyLogging
 import hcluster.Types._
-import org.apache.lucene.search.spell.JaroWinklerDistance
+import org.apache.lucene.search.spell.LevensteinDistance
 import org.scalatest.FunSuite
 
 class ClustererTest extends FunSuite with LazyLogging {
@@ -18,17 +18,20 @@ class ClustererTest extends FunSuite with LazyLogging {
       with LuceneSimilarityMetric
       with ExahaustivePairGenerator
       with MaxIntraSimilarityClusterEvaluator {
-      val distance = new JaroWinklerDistance
-      override val lowThreshold: Similarity = 0.85d
+      val distance = new LevensteinDistance
+      override val lowThreshold: Similarity = 0.5d
     }
 
     val (score, clusters) = clusterer.cluster(names)
-    assert(score == 0.7083333358168602)
-    assert(clusters == Seq(
-      Seq("ricardo"),
-      Seq("martha", "marta"),
-      Seq("malrene", "marleny", "marlen", "marlene"),
-      Seq("alejandro", "alejo", "alejito")))
+    assert(score == 0.5694444477558136)
+    assert(clusters.map(_.sorted).toSet ==
+      Vector(
+        Vector("ricardo").sorted,
+        Vector("martha", "marta").sorted,
+        Vector("malrene", "marleny", "marlen", "marlene").sorted,
+        Vector("alejandro", "alejo", "alejito").sorted
+      ).toSet
+    )
   }
 }
 
@@ -42,7 +45,7 @@ object ClustererTest extends App {
       with ExahaustivePairGenerator
       with MaxIntraSimilarityClusterEvaluator // DaviesBouldinClusterEvaluator
     {
-      val distance = new JaroWinklerDistance
+      val distance = new LevensteinDistance
       override val lowThreshold: Similarity = threshold
     }
 
