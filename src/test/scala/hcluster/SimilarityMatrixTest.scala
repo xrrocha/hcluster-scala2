@@ -1,13 +1,12 @@
 package hcluster
 
-import org.scalatest.FunSuite
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.lucene.search.spell.JaroWinklerDistance
-import org.slf4j.LoggerFactory
-import com.typesafe.scalalogging.slf4j.Logger
+import org.scalatest.FunSuite
 
-class SimilarityMatrixTest extends FunSuite with Logging {
-  val logger = Logger(LoggerFactory getLogger "SimilarityMatrixTest")
+import scala.collection.immutable
+
+class SimilarityMatrixTest extends FunSuite with LazyLogging {
 
   val names = Vector(
     "alejandro", "alejito", "alejo",
@@ -15,14 +14,15 @@ class SimilarityMatrixTest extends FunSuite with Logging {
     "marta", "martha",
     "ricardo")
 
-  val pairs = for {
-    i <- 0 until names.length
+  val pairs: immutable.IndexedSeq[(Int, Int)] = for {
+    i <- names.indices
     j <- i + 1 until names.length
   } yield (i, j)
 
   val minSimilarity = 0d
   val jaroWinkler = new JaroWinklerDistance
-  val compare = (i: Int, j: Int) => jaroWinkler.getDistance(names(i), names(j)).toDouble
+  val compare: (Int, Int) => Double =
+    (i: Int, j: Int) => jaroWinkler.getDistance(names(i), names(j)).toDouble
 
   val similarityMatrix = SimilarityMatrix(compare, pairs, minSimilarity)
   // logger.debug(s"Build similarity matrix: $similarityMatrix")
@@ -32,7 +32,7 @@ class SimilarityMatrixTest extends FunSuite with Logging {
   }
 
   test("Accepts all valid indexes correctly") {
-    for (i <- 0 until names.length; j <- 0 until names.length) {
+    for (i <- names.indices; j <- names.indices) {
       val score = compare(i, j)
       assert(similarityMatrix(i, j) == score)
       assert(similarityMatrix(j, i) == score)

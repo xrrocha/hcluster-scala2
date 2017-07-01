@@ -1,13 +1,15 @@
 package hcluster
 
-import Types._
+import hcluster.Types._
 
 import scala.collection.immutable
 
 // TODO Support minSimilarity = 0d
-trait Clusterer[A] { this: PairGenerator with SimilarityMetric[A] with ClusterEvaluator =>
+trait Clusterer[A] {
+  this: PairGenerator with SimilarityMetric[A] with ClusterEvaluator =>
   def cluster(values: IndexedSeq[A]): (Score, Seq[Seq[A]]) = {
     val pairs: IndexedSeq[(Index, Index)] = pairsFrom(values)
+
     def doCompare(i: Index, j: Index) = compare(values(i), values(j))
 
     val similarityMatrix: SimilarityMatrix = SimilarityMatrix(doCompare, pairs, lowThreshold)
@@ -44,11 +46,11 @@ trait Clusterer[A] { this: PairGenerator with SimilarityMetric[A] with ClusterEv
 
     val thresholds: Seq[Similarity] = Dendrogram.thresholds(dendrogram) filter (_ > lowThreshold)
 
-    if (thresholds isEmpty) (evaluate(clusters, similarityMatrix), clusters)
+    if (thresholds.isEmpty) (evaluate(clusters, similarityMatrix), clusters)
     else {
-      val evaluations: Seq[(Score, IndexedSeq[Cluster])] =  thresholds map { threshold =>
+      val evaluations: Seq[(Score, IndexedSeq[Cluster])] = thresholds map { threshold =>
         val cuts: IndexedSeq[Dendrogram] = dendrogram cutAt threshold
-        val clusters: IndexedSeq[Cluster] =  cuts map (Cluster(_, similarityMatrix))
+        val clusters: IndexedSeq[Cluster] = cuts map (Cluster(_, similarityMatrix))
         (evaluate(clusters, similarityMatrix), clusters)
       }
 

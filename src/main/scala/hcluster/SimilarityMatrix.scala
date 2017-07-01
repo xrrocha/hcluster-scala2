@@ -1,15 +1,15 @@
 package hcluster
 
-import Types._
+import hcluster.Types._
 
 import scala.collection.parallel.ParSeq
 
 trait SimilarityMatrix {
   def size: Index
-  protected[SimilarityMatrix] def map: Map[Int, Map[Int, Similarity]]
 
   def apply(i: Index, j: Index): Similarity = {
-    validate(i); validate(j)
+    validate(i)
+    validate(j)
 
     if (i == j) 1d
     else {
@@ -18,25 +18,26 @@ trait SimilarityMatrix {
     }
   }
 
-  def validate(index: Index) =
+  def validate(index: Index): Unit =
     if (!(index >= 0 && index < size))
       throw new IllegalArgumentException(s"Invalid index not between 0 and ${size - 1}:  $index")
 
   override def toString = s"$size: ${map.toString}"
+
+  protected[SimilarityMatrix] def map: SparseMatrix
 }
 
 object SimilarityMatrix {
   def apply(compare: (Index, Index) => Similarity,
             pairs: Seq[(Index, Index)],
-            minThreshold: Similarity = 0d): SimilarityMatrix =
-  {
+            minThreshold: Similarity = 0d): SimilarityMatrix = {
     val triplets: ParSeq[(Index, Index, Similarity)] =
       pairs.par.map { case (i, j) =>
         (i, j, compare(i, j))
       }
 
-    def addPair(accum: (Index, Map[Int, Map[Int, Similarity]]), triplet: (Index, Index, Similarity)): (Index, Map[Int, Map[Int, Similarity]]) = {
-      val (maxIndex: Index, map: Map[Index, Map[Index, Similarity]]) = accum
+    def addPair(accum: (Index, SparseMatrix), triplet: (Index, Index, Similarity)): (Index, SparseMatrix) = {
+      val (maxIndex: Index, map: SparseMatrix) = accum
       val (leftIndex: Index, rightIndex: Index, similarity: Similarity) = triplet
 
       val pairMax = math.max(leftIndex, rightIndex)
@@ -49,11 +50,11 @@ object SimilarityMatrix {
       }
     }
 
-    val (maxIndex: Index, similarityMap: Map[Index, Map[Index, Similarity]]) =
+    val (maxIndex: Index, similarityMap: SparseMatrix) =
       triplets.seq.foldLeft(0, Map[Int, Map[Int, Similarity]]())(addPair)
 
     new SimilarityMatrix {
-      val map: Map[Index, Map[Index, Similarity]] = similarityMap
+      val map: SparseMatrix = similarityMap
       val size: Index = maxIndex + 1
     }
   }

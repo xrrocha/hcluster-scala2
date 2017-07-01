@@ -1,21 +1,17 @@
 package hcluster
 
-import Types._
-import org.scalatest.FunSuite
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.LazyLogging
+import hcluster.Types._
 import org.apache.lucene.search.spell.JaroWinklerDistance
-import org.slf4j.LoggerFactory
-import com.typesafe.scalalogging.slf4j.Logger
-import java.io.{File, FileWriter, PrintWriter}
+import org.scalatest.FunSuite
 
-class ClusterTest extends FunSuite with Logging {
-  val logger = Logger(LoggerFactory getLogger "ClusterTest")
+class ClusterTest extends FunSuite with LazyLogging {
 
-  test ("Builds cluster from branch dendrogram") {
-    val  names = Seq("malrene", "marleny", "marlen", "marlene")
+  test("Builds cluster from branch dendrogram") {
+    val names = Seq("malrene", "marleny", "marlen", "marlene")
 
     val pairs = for {
-      i <- 0 until names.length
+      i <- names.indices
       j <- i + 1 until names.length
     } yield (i, j)
 
@@ -47,10 +43,10 @@ class ClusterTest extends FunSuite with Logging {
     assert(cluster.elements == Seq(3, 2, 1, 0))
   }
 
-  test ("Builds cluster from leaf dendrogram") {
+  test("Builds cluster from leaf dendrogram") {
     val similarityMatrix = new SimilarityMatrix {
       val size = 0
-      val map = Map[Index, Map[Index, Similarity]]()
+      val map: SparseMatrix = Map[Int, Map[Int, Similarity]]()
     }
     val cluster = Cluster(Leaf(Cluster(0)), similarityMatrix)
     assert(cluster.centroid == 0)
@@ -59,10 +55,10 @@ class ClusterTest extends FunSuite with Logging {
   }
 
   test("Computes similarity with another cluster") {
-    val  names = Seq("alejo", "alejito", "malrene", "marleny", "marlen", "marlene")
+    val names = Seq("alejo", "alejito", "malrene", "marleny", "marlen", "marlene")
 
     val pairs = for {
-      i <- 0 until names.length
+      i <- names.indices
       j <- i + 1 until names.length
     } yield (i, j)
 

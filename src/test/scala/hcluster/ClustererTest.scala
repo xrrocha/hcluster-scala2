@@ -1,15 +1,11 @@
 package hcluster
 
-import Types._
-import org.scalatest.FunSuite
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.LazyLogging
+import hcluster.Types._
 import org.apache.lucene.search.spell.JaroWinklerDistance
-import org.slf4j.LoggerFactory
-import com.typesafe.scalalogging.slf4j.Logger
-import java.io.{File, FileWriter, PrintWriter}
+import org.scalatest.FunSuite
 
-class ClustererTest extends FunSuite with Logging {
-  val logger = Logger(LoggerFactory getLogger "ClusterTest")
+class ClustererTest extends FunSuite with LazyLogging {
 
   val names = IndexedSeq(
     "alejandro", "alejito", "alejo",
@@ -21,8 +17,7 @@ class ClustererTest extends FunSuite with Logging {
     val clusterer = new Clusterer[String]
       with LuceneSimilarityMetric
       with ExahaustivePairGenerator
-      with MaxIntraSimilarityClusterEvaluator
-    {
+      with MaxIntraSimilarityClusterEvaluator {
       val distance = new JaroWinklerDistance
       override val lowThreshold: Similarity = 0.85d
     }
@@ -59,7 +54,7 @@ object ClustererTest extends App {
   }
 
   metrics foreach { case (threshold, clusters, score, elapsedTime) =>
-    println(s"$threshold\t${clusters.length}\t${score}\t$elapsedTime")
+    println(s"$threshold\t${clusters.length}\t$score\t$elapsedTime")
   }
 
   val bestScore = metrics.map(_._3).max
@@ -70,7 +65,7 @@ object ClustererTest extends App {
   }
   println(s"${bestClusters.length} clusters with score $bestScore found at threshold $bestThreshold in $bestElapsedTime milliseconds")
 
-  def time[A](a: => A) = {
+  def time[A](a: => A): (A, Long) = {
     val startTime = System.currentTimeMillis()
     val result = a
     val endTime = System.currentTimeMillis()
