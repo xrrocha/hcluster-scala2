@@ -16,8 +16,8 @@ class ClusterTest extends FunSuite with LazyLogging {
     } yield (i, j)
 
     val minSimilarity = 0d
-    val jaroWinkler = new LevensteinDistance
-    val compare = (i: Int, j: Int) => jaroWinkler.getDistance(names(i), names(j)).toDouble
+    val stringDistance = new LevensteinDistance
+    val compare = (i: Int, j: Int) => stringDistance.getDistance(names(i), names(j)).toDouble
 
     val similarityMatrix = SimilarityMatrix(compare, pairs, minSimilarity)
 
@@ -63,8 +63,8 @@ class ClusterTest extends FunSuite with LazyLogging {
     } yield (i, j)
 
     val minSimilarity = 0d
-    val jaroWinkler = new LevensteinDistance
-    val compare = (i: Int, j: Int) => jaroWinkler.getDistance(names(i), names(j)).toDouble
+    val stringDistance = new LevensteinDistance
+    val compare = (i: Int, j: Int) => stringDistance.getDistance(names(i), names(j)).toDouble
 
     val similarityMatrix = SimilarityMatrix(compare, pairs, minSimilarity)
 
