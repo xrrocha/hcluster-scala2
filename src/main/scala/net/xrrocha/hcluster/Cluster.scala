@@ -1,6 +1,6 @@
-package hcluster
+package net.xrrocha.hcluster
 
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
 case class Cluster(centroid: Index, intraSimilarity: Similarity, elements: Seq[Int]) {
   def similarity(other: Cluster, similarityMatrix: SimilarityMatrix): Similarity =

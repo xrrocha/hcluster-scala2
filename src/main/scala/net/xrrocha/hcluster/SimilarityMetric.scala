@@ -1,6 +1,6 @@
-package hcluster
+package net.xrrocha.hcluster
 
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
 trait SimilarityMetric[A] {
   def lowThreshold: Similarity = 0d

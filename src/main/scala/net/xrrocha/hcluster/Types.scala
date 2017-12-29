@@ -1,4 +1,4 @@
-package hcluster
+package net.xrrocha.hcluster
 
 object Types {
   type Index = Int

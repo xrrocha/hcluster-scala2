@@ -1,7 +1,7 @@
-package hcluster
+package net.xrrocha.hcluster
 
 import com.typesafe.scalalogging.LazyLogging
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
 trait Dendrogram {
   def clusters: IndexedSeq[Cluster] = collectClusters(Vector())

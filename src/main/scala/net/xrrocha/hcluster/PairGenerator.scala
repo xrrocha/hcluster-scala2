@@ -1,6 +1,6 @@
-package hcluster
+package net.xrrocha.hcluster
 
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
 trait PairGenerator {
   def pairsFrom[A](elements: IndexedSeq[A]): IndexedSeq[(Index, Index)]

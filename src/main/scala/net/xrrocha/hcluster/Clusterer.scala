@@ -1,7 +1,8 @@
-package hcluster
+package net.xrrocha.hcluster
 
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
+import scala.annotation.tailrec
 import scala.collection.immutable
 
 // TODO Support minSimilarity = 0d
@@ -21,6 +22,7 @@ trait Clusterer[A] {
     (evaluation, clusters.map(_.elements.map(values)))
   }
 
+  @tailrec
   private def agglomerate(clusters: Seq[Cluster],
                           bestSoFar: (Score, Seq[Cluster]),
                           similarityMatrix: SimilarityMatrix): (Score, Seq[Cluster]) = {
@@ -29,7 +31,7 @@ trait Clusterer[A] {
 
     val (newScore: Score, newClusters: Seq[Cluster]) = cluster(clusters, similarityMatrix)
 
-    if (newClusters.length == clusters.length)
+    if (newClusters.lengthCompare(clusters.length) == 0)
       (bestScoreSoFar, bestClustersSoFar)
     else {
       val nextBestSoFar: (Score, Seq[Cluster]) =

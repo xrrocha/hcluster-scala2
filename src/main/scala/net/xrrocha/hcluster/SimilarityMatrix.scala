@@ -1,6 +1,6 @@
-package hcluster
+package net.xrrocha.hcluster
 
-import hcluster.Types._
+import net.xrrocha.hcluster.Types._
 
 import scala.collection.parallel.ParSeq
 
