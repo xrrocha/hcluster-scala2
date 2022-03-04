@@ -1,4 +1,6 @@
-target
-stage
-.idea
 *.log
+.DS_Store
+.idea/
+.local/
+stage/
+target/

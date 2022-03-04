@@ -1,4 +1,4 @@
-name := "playground"
+name := "hcluster-scala2"
 
 version := "0.1"
 

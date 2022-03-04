@@ -3,7 +3,6 @@ package net.xrrocha.hcluster
 import net.xrrocha.hcluster.Types._
 
 import scala.annotation.tailrec
-import scala.collection.immutable
 
 // TODO Support minSimilarity = 0d
 trait Clusterer[A] {
@@ -15,7 +14,7 @@ trait Clusterer[A] {
     def doCompare(i: Index, j: Index) = compare(values(i), values(j))
 
     val similarityMatrix: SimilarityMatrix = SimilarityMatrix(doCompare, pairs, lowThreshold)
-    val seedClusters: immutable.IndexedSeq[Cluster] = values.indices.map(Cluster(_))
+    val seedClusters: IndexedSeq[Cluster] = values.indices.map(Cluster(_))
     val (evaluation: Score, clusters: Seq[Cluster]) =
       agglomerate(seedClusters, (evaluate(seedClusters, similarityMatrix), seedClusters), similarityMatrix)
 

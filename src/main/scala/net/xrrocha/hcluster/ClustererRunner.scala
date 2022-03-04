@@ -1,50 +1,68 @@
 package net.xrrocha.hcluster
 
-import java.io.{File, FileWriter, PrintWriter}
-
 import com.typesafe.scalalogging.StrictLogging
 import net.xrrocha.hcluster.Types.Similarity
-import org.apache.lucene.search.spell.LevensteinDistance
 
+import java.io._
+import java.nio.charset.StandardCharsets
 import scala.io.Source
+import scala.math.{max, min}
 
 object ClustererRunner extends App with StrictLogging {
-  val start = .8
-  val end = .95
-  val step = 0.5
-  val metrics = for (threshold <- start to end by step) yield {
-    val clusterer = new Clusterer[String]
-      with LuceneSimilarityMetric
-      with ExahaustivePairGenerator
-      with MaxIntraSimilarityClusterEvaluator // DaviesBouldinClusterEvaluator
-    {
-      val distance = new LevensteinDistance
-      override val lowThreshold: Similarity = threshold
+
+  //noinspection SourceNotClosed
+  val basename = "age-gender-city-categories"
+  val lines = doWith[Source, List[String]](Source.fromFile(s"data/$basename.tsv"), { source =>
+    source.getLines().toList
+  })
+  val elements = lines
+    .map { line =>
+      val Array(ageGroup, gender, city, categories) = line.split("\t")
+      ConsumerProfile(ageGroup, gender, city, categories)
     }
+    .toVector
 
-    val names = Source.fromFile("data/spanish-surnames.tsv").getLines.take(4072).toVector
-
-    val (pair, elapsedTime) = time(clusterer.cluster(names))
-    val (score, clusters) = pair
-    (threshold, clusters, score, elapsedTime)
+  val tfidf = new TfIdfSimilarityMetric {
+    override val documentList: List[String] = elements.map(_.categories).toList
   }
 
-  metrics foreach { case (threshold, clusters, score, elapsedTime) =>
-    logger.debug(s"$threshold\t${clusters.length}\t$score\t$elapsedTime")
+  case class ConsumerProfile(ageGroup: String, gender: String, city: String, categories: String) {
+    private val age = ageGroup.toInt + 1
+
+    def compareWith(that: ConsumerProfile): Double = (
+      (min(this.age, that.age) / max(this.age, that.age)) +
+        (if (this.gender == that.gender) 1 else 0) +
+        (if (this.city == that.city) 1 else 0) +
+        tfidf.compare(this.categories, that.categories)
+      // (this.categories.intersect(that.categories).length.toDouble / this.categories.union(that.categories).length)
+      ) / 4.0
+
+    override def toString = s"$ageGroup\t$gender\t$city\t${categories}"
   }
 
-  val bestScore = metrics.map(_._3).max
-  val (bestThreshold, bestClusters, _, bestElapsedTime) = metrics.find(_._3 == bestScore).get
+  val clusterer = new Clusterer[ConsumerProfile]
+    with SimilarityMetric[ConsumerProfile]
+    with ExahaustivePairGenerator
+    with MaxIntraSimilarityClusterEvaluator {
+    override def lowThreshold: Similarity = 0.5d
 
-  val clusterFile = new File("data/clusters.tsv")
-  val out = new PrintWriter(new FileWriter(clusterFile), true)
-  bestClusters.sortBy(-_.length) foreach { cluster =>
-    val clusterLine = cluster.mkString(",")
-    out.println(s"${cluster.length}\t$clusterLine")
-    logger.debug(s"${cluster.length}: $clusterLine")
+    def compare(a1: ConsumerProfile, a2: ConsumerProfile): Similarity = a1.compareWith(a2)
+  }
+
+  val (pair, elapsedTime) = time(clusterer.cluster(elements))
+  val (score, clusters) = pair
+
+  val clusterFile = new File(s"data/$basename-clusters.tsv")
+  val out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(clusterFile), StandardCharsets.UTF_8), true)
+
+  clusters.sortBy(-_.length).zipWithIndex.foreach { pair =>
+    val (cluster, index) = pair
+    cluster.foreach { element =>
+      out.println(s"$index\t${cluster.size}\t$element")
+    }
   }
   out.close()
-  logger.debug(s"${bestClusters.length} clusters with score $bestScore found at threshold $bestThreshold in $bestElapsedTime milliseconds")
+  logger.debug(s"${clusters.length} clusters with score $score $elapsedTime milliseconds")
 
   def time[A](a: => A): (A, Long) = {
     val startTime = System.currentTimeMillis()
@@ -52,4 +70,11 @@ object ClustererRunner extends App with StrictLogging {
     val endTime = System.currentTimeMillis()
     (result, endTime - startTime)
   }
+
+  def doWith[A <: Closeable, B](target: A, action: A => B): B =
+    try {
+      action(target)
+    } finally {
+      target.close()
+    }
 }
