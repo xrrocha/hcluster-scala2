@@ -1,4 +1,5 @@
 *.clusters
 *.tmp
+cuponcity/
 pairs-*.tsv
 test_data.tsv
